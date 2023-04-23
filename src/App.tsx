@@ -34,7 +34,9 @@ function App() {
     
       ws.addEventListener('message', async (event) => {
         const messageString = prettyPrintJson(JSON.stringify(event.data));
-        setMessages([...messages, messageString]);
+        const newMessages = messages;
+        newMessages.push(messageString);
+        setMessages(newMessages);
       });
     
       // Add a listener for the 'close' event
@@ -91,8 +93,8 @@ function App() {
       <div className='status'>node-id: {id}</div>
       <div className='status'>ws-url: {wsUrl}</div>
       <div className='status'>connection: {isConnectionOpen ? 'connected' : 'disconnected'}</div>
-      {messages.map((ms) => {
-        return <div className='message'>{(ms)}</div>
+      {messages.map((ms, idx) => {
+        return <div className='message' id={'message'+idx}>{(ms)}</div>
       })}
       </div>
     </div>
