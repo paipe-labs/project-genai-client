@@ -3,76 +3,98 @@ import "./App.css";
 import { useEffect, useState } from 'react';
 import { Command } from '@tauri-apps/api/shell'
 import { invoke } from "@tauri-apps/api";
+import axios, { AxiosResponse } from "axios";
+import uuidv4 from './helpers/uuid.js'
+import prettyPrintJson from "./helpers/prettyPrint";
 function App() {
 
 
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<string[]>([]);
+  const [id, setId] = useState<string>('Not assigned');
+  const [wsUrl, setWsUrl] = useState<string>('Not assigned');
+  const [isConnectionOpen, setConnectionOpen] = useState<boolean>(false);
 
   useEffect(() => {
 
-      // Create a new WebSocket connection
-  
-      const node = 'node-id-random-tauri';
-  
-      const ws = new WebSocket('ws://localhost:8080');
-  
-      // Add a listener for the 'open' event
+    // Create a new WebSocket connection
+
+    const setup = async () => {
+
+      const localNode:string = uuidv4();
+      setId(localNode);
+      const websocketUri = await getWebsocketConnectionEndpoint();
+      setWsUrl(websocketUri);
+      const ws = new WebSocket(websocketUri);
+
       ws.addEventListener('open', (event) => {
-        ws.send(JSON.stringify({ type: 'greetings', node_id: node }));
+        ws.send(JSON.stringify({ type: 'greetings', node_id: localNode }));
         console.log('WebSocket connection opened');
+        setConnectionOpen(true);
       });
-  
-      // Add a listener for the 'message' event
+    
       ws.addEventListener('message', async (event) => {
-        console.log('Received message:', event.data);
-        try {
-          executeShellCommand('ls -la')
-        } catch (beepError) {
-          console.log(beepError)
-        }
+        const messageString = prettyPrintJson(JSON.stringify(event.data));
+        setMessages([...messages, messageString]);
       });
-  
+    
       // Add a listener for the 'close' event
       ws.addEventListener('close', (event) => {
         console.log('WebSocket connection closed');
+        setConnectionOpen(false);
       });
-  
-      // Clean up the WebSocket connection when the component unmounts
+      
+
       return () => {
         ws.close();
       };
 
-  }, [])
+    }
 
+
+  
+    setup();
+
+  }, []);
+
+  
+  const getWebsocketConnectionEndpoint = async () => {
+    const request = await axios.post('https://genai.edenvr.link/v1/client/hello');
+    if (request.data.ok === true) {
+      return request.data.url;
+    }
+  }
 
   const executeShellCommand = async (command: string) => {
     try {
-      
-      const cmd = new Command('ls', ['-la']);
-
-      cmd.on('error', (error) => alert(`command error: "${error}"`))
-
-    cmd.stdout.on('data', (line) => alert(`command stdout: "${line}"`))
-    cmd.stderr.on('data', (line) => alert(`command stderr: "${line}"`))
-      cmd.spawn();
+      await new Promise(async (resolve) => {
+        const cmd = new Command('ls', ['-la']);
+        cmd.on('error', (error) => alert(`command error: "${error}"`))
+        cmd.stdout.on('data', (line) => {
+          resolve(line);
+        })
+        cmd.stderr.on('data', (line) => {
+          resolve(line);
+        })
+        cmd.spawn();
+      })
+      return true;
     } catch (error) {
       console.error(error); // log any errors to the console
-    }
-  };
-  const beep = async () => {
-    try {
-      await invoke('notification', {
-        title: 'Beep!',
-        body: 'This is a beep notification',
-      });
-    } catch (error) {
-      console.error(error);
+      return false;
     }
   };
  
   return (
     <div className="container">
-      <div>Hello World3f</div>
+      <div className='content'>
+      <div>GenAI --- DEMO</div>
+      <div className='status'>node-id: {id}</div>
+      <div className='status'>ws-url: {wsUrl}</div>
+      <div className='status'>connection: {isConnectionOpen ? 'connected' : 'disconnected'}</div>
+      {messages.map((ms) => {
+        return <div className='message'>{(ms)}</div>
+      })}
+      </div>
     </div>
   );
 }
