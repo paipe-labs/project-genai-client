@@ -13,6 +13,8 @@ function App() {
   const [id, setId] = useState<string>('Not assigned');
   const [wsUrl, setWsUrl] = useState<string>('Not assigned');
   const [isConnectionOpen, setConnectionOpen] = useState<boolean>(false);
+  const [imageResult, setImageResult] = useState<string>('');
+  const defualtApiAddress = 'http://127.0.0.1:5003/api';
 
   useEffect(() => {
 
@@ -34,6 +36,35 @@ function App() {
     
       ws.addEventListener('message', async (event) => {
         const messageString = prettyPrintJson(JSON.stringify(event.data));
+        const {model, size, prompt} = JSON.parse(event.data);
+
+        switch (model) {
+          case 'SD2.1-base':
+            const generation = await axios.post(`${defualtApiAddress}/generate/txt2img`, {
+              backend: 'PyTorch',
+              autoload: false,
+              data: {
+                id: uuidv4(),
+                prompt: prompt,
+                negative_prompt: "ugly, bad quality, low resolution, worst quality, bad anatomy",
+                width: 512,
+                height: 512,
+                steps: 30,
+                guidance_scale: 8,
+                seed: Math.floor(Math.random() * 1000000000),
+                batch_size: 1,
+                batch_count: 1,
+                scheduler: 5,
+                self_attention_scale: 0
+            },
+              model: 'stabilityai/stable-diffusion-2-1'
+            });
+
+            setImageResult(generation.data.images[0]);
+            break;
+
+        }
+
         setMessages([...messages, messageString]);
       });
     
@@ -50,12 +81,10 @@ function App() {
 
     }
 
-
-  
     setup();
 
-  }, []);
 
+  }, []);
   
   const getWebsocketConnectionEndpoint = async () => {
     const request = await axios.post('https://genai.edenvr.link/v1/client/hello');
@@ -95,6 +124,13 @@ function App() {
         return <div className='message'>{(ms)}</div>
       })}
       </div>
+      <div className="content">
+        <div>
+          Enter local api address:
+        </div>
+        <input id="image-generation" value={defualtApiAddress}></input>
+      </div>
+      <img src={imageResult}></img>
     </div>
   );
 }

@@ -16,6 +16,10 @@
       "shell": {
         "scope": [
           {
+            "name": "python",
+            "cmd": "python test.py"
+          },
+          {
             "name": "ls",
             "cmd": "ls",
             "args": ["-la"]
