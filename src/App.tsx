@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react';
 import { Command } from '@tauri-apps/api/shell'
 import { invoke } from "@tauri-apps/api";
 import axios, { AxiosResponse } from "axios";
-import uuidv4 from './helpers/uuid.js'
-import prettyPrintJson from "./helpers/prettyPrint";
+import { prettyPrintJson, uuidv4} from "./helpers/index";
 function App() {
 
 
@@ -15,6 +14,8 @@ function App() {
   const [isConnectionOpen, setConnectionOpen] = useState<boolean>(false);
   const [imageResult, setImageResult] = useState<string>('');
   const defualtApiAddress = 'http://127.0.0.1:5003/api';
+
+  const isDevMode = false;
 
   useEffect(() => {
 
@@ -88,7 +89,7 @@ function App() {
   }, []);
   
   const getWebsocketConnectionEndpoint = async () => {
-    const request = await axios.post('https://genai.edenvr.link/v1/client/hello');
+    const request = await axios.post(isDevMode ? 'http://localhost:8080/v1/client/hello' : 'https://orca-app-feq22.ondigitalocean.app/v1/client/hello');
     if (request.data.ok === true) {
       return request.data.url;
     }

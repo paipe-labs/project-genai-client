@@ -1,4 +1,4 @@
-function prettyPrintJson(jsonString: string): string {
+export function prettyPrintJson(jsonString: string): string {
     try {
       const jsonObject = JSON.parse(jsonString);
       const prettyJsonString = JSON.stringify(jsonObject, null, 2);
@@ -8,5 +8,3 @@ function prettyPrintJson(jsonString: string): string {
       return jsonString;
     }
 }
-  
-export default prettyPrintJson;
