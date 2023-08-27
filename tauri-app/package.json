@@ -12,14 +12,17 @@
   "dependencies": {
     "@tauri-apps/api": "^1.2.0",
     "@types/axios": "^0.14.0",
+    "@gradio/client": "^0.1.3",
     "axios": "^1.3.6",
     "genai-network-client": "link:../client-package",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "ws": "^8.13.0"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^1.2.2",
     "@types/node": "^18.7.10",
+    "@types/ws": "8.5.5",
     "@types/react": "^18.0.15",
     "@types/react-dom": "^18.0.6",
     "@vitejs/plugin-react": "^3.0.0",

@@ -1,2 +1,2 @@
-export { uuidv4 } from "./uuid";
-export { prettyPrintJson } from "./prettyPrint";
+export { uuidv4 } from "./uuid.js";
+export { prettyPrintJson } from "./prettyPrint.js";
