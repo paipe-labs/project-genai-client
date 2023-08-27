@@ -3,8 +3,12 @@ import { prettyPrintJson, uuidv4 } from "./helpers/index.js";
 
 import { WebSocket as WebSocketNode } from 'ws';
 
-import { isNode, isBrowser } from 'browser-or-node';
-import sdwebui, { Client } from "node-sd-webui";
+import { isNode } from 'browser-or-node';
+import { Task, TaskResult, TaskZod } from "./types.js";
+import { TasksManager } from "./TasksManager.js";
+import { InferenceServer } from "./InferenceServer/InferenceServer.js";
+import { AutomaticInferenceServer } from "./InferenceServer/AutomaticInferenceServer.js";
+import { VoltaMLInferenceServer } from "./InferenceServer/VoltaMLInferenceServer.js";
 
 const wsURL = 'ws://localhost:8080/';//'wss://api.genai.network/';
 export type InferenceServerType = 'automatic' | 'voltaml';
@@ -18,77 +22,58 @@ export type SessionManagerOptions = {
  * SessionManager is responsible for managing the websocket connection to the server.
  */
 export class SessionManager {
-  private DefualtInferenceServerUrl = 'http://127.0.0.1:7860';
-  private _inferenceServerUrl: string;
-  private _inferenceServerType: InferenceServerType;
-  private _automaticClient: Client;
+  private _inferenceServerUrl?: string;
+  private _tasksManager: TasksManager;
+  private _inferenceServer: InferenceServer;
+  private _ws: WebSocket | WebSocketNode;
 
   constructor(options?: SessionManagerOptions) {
-    this._inferenceServerUrl = options?.inferenceServerUrl ?? this.DefualtInferenceServerUrl;
-    this._inferenceServerType = options?.inferenceServerType ?? 'automatic';
-    this._automaticClient = sdwebui({apiUrl: this._inferenceServerUrl});
+    this._inferenceServerUrl = options?.inferenceServerUrl;
+    
+    const inferenceServerType = options?.inferenceServerType ?? 'automatic';
+
+    switch (inferenceServerType) {
+      case 'automatic':
+        this._inferenceServer = new AutomaticInferenceServer({ inferenceServerUrl: this._inferenceServerUrl });
+        break;
+      case 'voltaml':
+        this._inferenceServer = new VoltaMLInferenceServer({ inferenceServerUrl: this._inferenceServerUrl });
+        break;
+    }
+
+    this._tasksManager = new TasksManager(this._inferenceServer);
+
+    if (isNode) {
+      this._ws = new WebSocketNode(wsURL);
+    } else {
+      this._ws = new WebSocket(wsURL);
+    }
 
     this.setupSession();
   }
 
-  async setupSession() {
-    const localNode: string = uuidv4();
-    
-    let ws: WebSocket | WebSocketNode;
-
-    if (isNode) {
-      ws = new WebSocketNode(wsURL);
-    } else {
-      ws = new WebSocket(wsURL);
-    }
+  private async setupSession() {
+    const { _ws: ws } = this;
       
     const onSocketOpen = () => {
-      ws.send(JSON.stringify({ type: 'greetings', node_id: localNode }));
+      ws.send(JSON.stringify({ type: 'greetings', node_id: uuidv4() }));
       console.log('WebSocket connection opened');
     };
 
-    const onSocketMessage = async (eventData: any) => {
-      const { model, size, prompt, request_id} = eventData;
+    const onSocketMessage = async (taskData: Task) => {
+      const isParsed = TaskZod.safeParse(taskData).success;
 
-      switch (this._inferenceServerType) {
-        case 'automatic':
-          this._automaticClient
-            .txt2img({
-              prompt: prompt,
-              steps: 20,
-            })
-            .then(({ images }) => {
-              ws.send(JSON.stringify({ type: 'result', status: 'ready', request_id, result_url: images[0] }));
-            })
-            .catch((err) => {
-              ws.send(JSON.stringify({ type: 'error', status: 'error', request_id, error: err }));
-            })
+      if (!isParsed) 
+        return console.log('Invalid task data:', taskData);
 
-          break;
-        case 'voltaml':
-          const generation = await axios.post(`${this._inferenceServerUrl}/generate/txt2img`, {
-            backend: 'PyTorch',
-            autoload: false,
-            data: {
-              id: uuidv4(),
-              prompt: prompt,
-              negative_prompt: "ugly, bad quality, low resolution, worst quality, bad anatomy",
-              width: 512,
-              height: 512,
-              steps: 30,
-              guidance_scale: 8,
-              seed: Math.floor(Math.random() * 1000000000),
-              batch_size: 1,
-              batch_count: 1,
-              scheduler: 5,
-              self_attention_scale: 0
-            },
-            model: 'stabilityai/stable-diffusion-2-1' //SD2.1-base 
-          });
+      const { taskId } = taskData;
 
-          console.log(generation.data.images[0]);
-          break;
-      }
+      this._tasksManager.executeTask(taskData).then((result) => {
+        this.sendTaskResult({ type: 'result', status: 'ready', taskId: taskId, resultsUrl: result.imagesUrls });
+      }).catch((error) => {
+        ws.send(JSON.stringify({ type: 'error', status: 'error', taskId: taskId, error: JSON.stringify(error)}));
+      });
+    
     };
 
     // Add a listener for the 'close' event
@@ -105,6 +90,10 @@ export class SessionManager {
       ws.addEventListener('message', (event) => onSocketMessage(JSON.parse(event.data.toString())));
       ws.addEventListener('close', onSocketClose);
     }
+  }
+
+  private sendTaskResult(taskResult: TaskResult) {
+    this._ws.send(JSON.stringify(taskResult));
   }
 
 }
