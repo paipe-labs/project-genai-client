@@ -10,7 +10,7 @@ import { InferenceServer } from "./InferenceServer/InferenceServer.js";
 import { AutomaticInferenceServer } from "./InferenceServer/AutomaticInferenceServer.js";
 import { VoltaMLInferenceServer } from "./InferenceServer/VoltaMLInferenceServer.js";
 
-const wsURL = 'ws://localhost:8080/';//'wss://api.genai.network/';
+const wsURL = 'wss://api.genai.network/';
 export type InferenceServerType = 'automatic' | 'voltaml';
 
 export type SessionManagerOptions = {
