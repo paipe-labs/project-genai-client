@@ -9,9 +9,10 @@ import { TasksManager } from "./TasksManager.js";
 import { InferenceServer } from "./InferenceServer/InferenceServer.js";
 import { AutomaticInferenceServer } from "./InferenceServer/AutomaticInferenceServer.js";
 import { VoltaMLInferenceServer } from "./InferenceServer/VoltaMLInferenceServer.js";
+import { TestInferenceServer } from "./InferenceServer/TestInferenceServer.js";
 
-const wsURL = 'wss://api.genai.network/';
-export type InferenceServerType = 'automatic' | 'voltaml';
+const wsURL = 'ws://localhost:8080/';//'wss://api.genai.network/';
+export type InferenceServerType = 'automatic' | 'voltaml' | 'test';
 
 export type SessionManagerOptions = {
   inferenceServerUrl?: string;
@@ -30,9 +31,12 @@ export class SessionManager {
   constructor(options?: SessionManagerOptions) {
     this._inferenceServerUrl = options?.inferenceServerUrl;
     
-    const inferenceServerType = options?.inferenceServerType ?? 'automatic';
+    const inferenceServerType = options?.inferenceServerType ?? 'test';
 
     switch (inferenceServerType) {
+      case 'test': 
+        this._inferenceServer = new TestInferenceServer();
+        break;
       case 'automatic':
         this._inferenceServer = new AutomaticInferenceServer({ inferenceServerUrl: this._inferenceServerUrl });
         break;
@@ -56,7 +60,7 @@ export class SessionManager {
     const { _ws: ws } = this;
       
     const onSocketOpen = () => {
-      ws.send(JSON.stringify({ type: 'greetings', node_id: uuidv4() }));
+      ws.send(JSON.stringify({ type: 'register', node_id: uuidv4() }));
       console.log('WebSocket connection opened');
     };
 
