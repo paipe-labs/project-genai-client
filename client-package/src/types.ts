@@ -15,7 +15,7 @@ export const TaskResultZod = z.object({
     taskId: z.string(),
     error: z.string().optional(),
     type: z.literal('result').or(z.literal('error')).or(z.literal('status')),
-    status: z.literal('ready').or(z.literal('inProgress')),
+    status: z.literal('ready').or(z.literal('inProgress')).optional(),
 });
 
 export type Task = z.infer<typeof TaskZod>;
