@@ -4,8 +4,8 @@ RUN apk update && apk add jq
 
 WORKDIR /genai-node
 
-COPY package.json .
-COPY yarn.lock .
+COPY client-package/package.json .
+COPY client-package/yarn.lock .
 
 RUN yarn install
 
@@ -14,7 +14,7 @@ RUN yarn install
 RUN jq '. + { "type": "module" }' node_modules/node-sd-webui/package.json > temp.json \
    && mv temp.json node_modules/node-sd-webui/package.json
 
-COPY . .
+COPY client-package .
 
 RUN yarn build
 
