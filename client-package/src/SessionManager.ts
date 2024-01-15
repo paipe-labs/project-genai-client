@@ -10,9 +10,10 @@ import { InferenceServer } from "./InferenceServer/InferenceServer.js";
 import { AutomaticInferenceServer } from "./InferenceServer/AutomaticInferenceServer.js";
 import { VoltaMLInferenceServer } from "./InferenceServer/VoltaMLInferenceServer.js";
 import { TestInferenceServer } from "./InferenceServer/TestInferenceServer.js";
+import { ComfyUIInferenceServer } from "./InferenceServer/ComfyUIInferenceServer.js";
 
-const wsURL = 'ws://localhost:8080/';//'wss://api.genai.network/';
-export type InferenceServerType = 'automatic' | 'voltaml' | 'test';
+const wsURL = 'wss://api.genai.network/';
+export type InferenceServerType = 'automatic' | 'voltaml' | 'test' | 'comfyUI';
 
 export type SessionManagerOptions = {
   inferenceServerUrl?: string;
@@ -43,6 +44,9 @@ export class SessionManager {
       case 'voltaml':
         this._inferenceServer = new VoltaMLInferenceServer({ inferenceServerUrl: this._inferenceServerUrl });
         break;
+      case 'comfyUI':
+        this._inferenceServer = new ComfyUIInferenceServer({ inferenceServerUrl: this._inferenceServerUrl });
+        break;
     }
 
     this._tasksManager = new TasksManager(this._inferenceServer);
@@ -54,6 +58,22 @@ export class SessionManager {
     }
 
     this.setupSession();
+  }
+
+  public sendTestTask(taskData: Task) {
+    const isParsed = TaskZod.safeParse(taskData).success;
+
+      if (!isParsed) 
+        return console.log('Invalid task data:', taskData);
+
+      const { taskId } = taskData;
+
+      this._tasksManager.executeTask(taskData).then((result) => {
+        console.log('result', result);
+      }).catch((error) => {
+        console.log('Failed to execute task', error);
+      });
+    
   }
 
   private async setupSession() {
@@ -82,7 +102,15 @@ export class SessionManager {
 
     // Add a listener for the 'close' event
     const onSocketClose = () => {
-      console.log('WebSocket connection closed');
+      console.log('WebSocket connection closed, trying to reconnect...');
+
+      if (isNode) {
+        this._ws = new WebSocketNode(wsURL);
+      } else {
+        this._ws = new WebSocket(wsURL);
+      }
+
+      this.setupSession();
     };
 
     if (isWebSocketNode(ws)) {

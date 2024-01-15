@@ -6,7 +6,10 @@ export const TaskZod = z.object({
         model: z.string(),
         size: z.string().optional(),
         steps: z.number().optional(),
-    }),
+    }).optional(),
+    comfyOptions: z.object({
+        pipelineData: z.string(),
+    }).optional(),
     taskId: z.string(),
 });
 

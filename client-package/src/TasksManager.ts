@@ -1,4 +1,4 @@
-import { ImageGenerationResponse, InferenceServer } from "./InferenceServer/InferenceServer.js";
+import { ImageGenerationOptions, ImageGenerationResponse, InferenceServer } from "./InferenceServer/InferenceServer.js";
 import { Task } from "./types.js";
 
 export class TasksManager {
@@ -38,10 +38,20 @@ export class TasksManager {
         if (!taskPromise) 
             return;
 
-        const { options: { prompt, model, size, steps } } = taskPromise.task;
-        
+        const { options, comfyOptions } = taskPromise.task;
+
+        const imageOptions: ImageGenerationOptions = {
+            standardPipeline: (options !== undefined) ? { 
+                positivePrompt: options.prompt, 
+                modelName: options.model,
+                numberOfSteps: options.steps,
+                size: { width: 512, height: 512 }
+            } : undefined,
+            comfyPipeline: comfyOptions,
+        };
+            
         try {
-            const result = await this._inferenceServer.generateImage({ positivePrompt: prompt, modelName: model, size: { width: 512, height: 512 }, numberOfSteps: steps });
+            const result = await this._inferenceServer.generateImage(imageOptions);
             console.log('Image generated inside TasksManager', taskPromise.task.taskId);
             
             taskPromise.resultResolve(result);
