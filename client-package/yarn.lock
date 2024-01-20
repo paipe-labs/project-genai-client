@@ -357,6 +357,7 @@ combined-stream@^1.0.8:
   dependencies:
     delayed-stream "~1.0.0"
 
+<<<<<<< HEAD
 comfy-ui-client@^0.1.2:
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/comfy-ui-client/-/comfy-ui-client-0.1.2.tgz#9cfbe475364ff57a029325d865771764a5a3ed41"
@@ -365,6 +366,12 @@ comfy-ui-client@^0.1.2:
     pino "^8.14.2"
     uuid "^9.0.0"
     ws "^8.13.0"
+=======
+commander@^11.1.0:
+  version "11.1.0"
+  resolved "https://registry.yarnpkg.com/commander/-/commander-11.1.0.tgz#62fdce76006a68e5c1ab3314dc92e800eb83d906"
+  integrity sha512-yPVavfyCcRhmorC7rWlkHn15b4wDVgVmBA7kV4QVBsF7kv/9TKJAbAXVTxvTnwP8HHKjRCJDClKbciiYS7p0DQ==
+>>>>>>> origin/main
 
 commander@^9.0.0:
   version "9.5.0"

@@ -3,6 +3,7 @@ import { prettyPrintJson, uuidv4 } from "./helpers/index.js";
 
 import { WebSocket as WebSocketNode } from 'ws';
 
+import { Command, Option } from 'commander';
 import { isNode } from 'browser-or-node';
 import { Task, TaskResult, TaskZod } from "./types.js";
 import { TasksManager } from "./TasksManager.js";
@@ -12,13 +13,30 @@ import { VoltaMLInferenceServer } from "./InferenceServer/VoltaMLInferenceServer
 import { TestInferenceServer } from "./InferenceServer/TestInferenceServer.js";
 import { ComfyUIInferenceServer } from "./InferenceServer/ComfyUIInferenceServer.js";
 
+<<<<<<< HEAD
 const wsURL = 'wss://api.genai.network/';
 export type InferenceServerType = 'automatic' | 'voltaml' | 'test' | 'comfyUI';
+=======
+export type InferenceServerType = 'automatic' | 'voltaml' | 'test';
+>>>>>>> origin/main
 
 export type SessionManagerOptions = {
-  inferenceServerUrl?: string;
-  inferenceServerType?: InferenceServerType;
+  inferenceServerUrl: string;
+  inferenceServerType: InferenceServerType;
 };
+
+export function parseSessionManagerOptions(): SessionManagerOptions {
+  const program = new Command();
+
+  program
+    .addOption(new Option('-c, --connect <url>', 'inference server url').default('ws://server:8080/'))
+    .addOption(new Option('-i, --inference-server <type>', 'inference server type').choices(['automatic', 'voltaml', 'test']).default('test'));
+
+  program.parse(process.argv);
+
+  const options = program.opts();
+  return { inferenceServerUrl: options.connect, inferenceServerType: options.inferenceServer };
+}
 
 /**
  * SessionManager is responsible for managing the websocket connection to the server.
@@ -29,13 +47,13 @@ export class SessionManager {
   private _inferenceServer: InferenceServer;
   private _ws: WebSocket | WebSocketNode;
 
-  constructor(options?: SessionManagerOptions) {
-    this._inferenceServerUrl = options?.inferenceServerUrl;
-    
-    const inferenceServerType = options?.inferenceServerType ?? 'test';
+  constructor(options: SessionManagerOptions) {
+    this._inferenceServerUrl = options.inferenceServerUrl;
+
+    const inferenceServerType = options.inferenceServerType;
 
     switch (inferenceServerType) {
-      case 'test': 
+      case 'test':
         this._inferenceServer = new TestInferenceServer();
         break;
       case 'automatic':
@@ -52,9 +70,9 @@ export class SessionManager {
     this._tasksManager = new TasksManager(this._inferenceServer);
 
     if (isNode) {
-      this._ws = new WebSocketNode(wsURL);
+      this._ws = new WebSocketNode(this._inferenceServerUrl);
     } else {
-      this._ws = new WebSocket(wsURL);
+      this._ws = new WebSocket(this._inferenceServerUrl);
     }
 
     this.setupSession();
@@ -76,7 +94,7 @@ export class SessionManager {
 
   private async setupSession() {
     const { _ws: ws } = this;
-      
+
     const onSocketOpen = () => {
       ws.send(JSON.stringify({ type: 'register', node_id: uuidv4() }));
       console.log('WebSocket connection opened');
@@ -85,7 +103,7 @@ export class SessionManager {
     const onSocketMessage = async (taskData: Task) => {
       const isParsed = TaskZod.safeParse(taskData).success;
 
-      if (!isParsed) 
+      if (!isParsed)
         return console.log('Invalid task data:', taskData);
 
       const { taskId } = taskData;
@@ -93,9 +111,9 @@ export class SessionManager {
       this._tasksManager.executeTask(taskData).then((result) => {
         this.sendTaskResult({ type: 'result', status: 'ready', taskId: taskId, resultsUrl: result.imagesUrls });
       }).catch((error) => {
-        ws.send(JSON.stringify({ type: 'error', status: 'error', taskId: taskId, error: JSON.stringify(error)}));
+        ws.send(JSON.stringify({ type: 'error', status: 'error', taskId: taskId, error: JSON.stringify(error) }));
       });
-    
+
     };
 
     // Add a listener for the 'close' event
