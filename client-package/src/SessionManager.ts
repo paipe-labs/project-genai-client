@@ -66,8 +66,6 @@ export class SessionManager {
       if (!isParsed) 
         return console.log('Invalid task data:', taskData);
 
-      const { taskId } = taskData;
-
       this._tasksManager.executeTask(taskData).then((result) => {
         console.log('result', result);
       }).catch((error) => {

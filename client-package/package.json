@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "cross-env NODE_ENV=production ts-node-esm --files -r tsconfig-paths/register ./src/run.ts",
+    "test:comfyui": "cross-env NODE_ENV=production ts-node-esm --files -r tsconfig-paths/register ./src/testRun.ts",
     "watch": "cross-env ts-node-dev --files --respawn --inspect -r tsconfig-paths/register ./src",
     "build": "yarn rm:public && cross-env NODE_ENV=production tsc && tsc-alias",
     "rm:public": "rm -rf ./public",

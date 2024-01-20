@@ -20,7 +20,6 @@ export class ComfyUIInferenceServer implements InferenceServer {
 
         const clientId = uuidv4();
         this._comfyClient = new ComfyUIClient(this._inferenceServerUrl, clientId);
-        this._comfyClient.connect();
     }
 
     async generateImage(options: ImageGenerationOptions): Promise<ImageGenerationResponse> {
@@ -29,18 +28,25 @@ export class ComfyUIInferenceServer implements InferenceServer {
         if (options.comfyPipeline === undefined) {
             throw new Error('ComfyUI inference server requires comfyUI pipeline options');
         }
-
         const { pipelineData } = options.comfyPipeline;
 
         const comfyPrompt = JSON.parse(pipelineData) as Prompt;
 
+        _comfyClient.connect();
+
         console.log('Attempt to generate image with comfyUI inference server');
-        const images = await _comfyClient.getImages(comfyPrompt);
+        const imageResponses = await _comfyClient.getImages(comfyPrompt);
 
-        const base64Url = await this.blobToBase64((images as any)['9'][0]['blob']);
+        const imagesUrls: string[] = [];
 
-        console.log(base64Url);
-        return { imagesUrls: [base64Url], info: 'Meow' };
+        for (const imageResponse of Object.values(imageResponses)) {
+            for (const image of imageResponse) {
+                const base64Url = await this.blobToBase64Url(image.blob);
+                imagesUrls.push(base64Url);
+            }
+        }
+
+        return { imagesUrls, info: 'Meow' };
 
     }
 
@@ -56,11 +62,8 @@ export class ComfyUIInferenceServer implements InferenceServer {
         throw new Error("Method not implemented.");
     }
 
-    async blobToBase64(blob: Blob): Promise<string> {
-        return new Promise((resolve, _) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(blob);
-        });
-      }
+    private async blobToBase64Url(blob: Blob) {
+        const buffer = Buffer.from(await blob.text());
+        return "data:" + blob.type + ';base64,' + buffer.toString('base64');
+    }
 }
