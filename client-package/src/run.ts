@@ -1,3 +1,4 @@
-import { SessionManager } from './SessionManager.js';
+import { parseSessionManagerOptions, SessionManager } from './SessionManager.js';
 
-const sessionManager = new SessionManager({ inferenceServerType: 'comfyUI' });
+const sessionManagerOptions = parseSessionManagerOptions();
+const sessionManager = new SessionManager(sessionManagerOptions);
