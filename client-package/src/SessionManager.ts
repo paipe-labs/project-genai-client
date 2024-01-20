@@ -25,7 +25,7 @@ export function parseSessionManagerOptions(): SessionManagerOptions {
   const program = new Command();
 
   program
-    .addOption(new Option('-c, --connect <url>', 'main server url').default('ws://server:8080/'))
+    .addOption(new Option('-c, --connect <url>', 'main server webSocket url').default('ws://server:8080/'))
     .addOption(new Option('-i, --inference-server <type>', 'inference server type').choices(['automatic', 'voltaml', 'test', 'comfyUI']).default('test'));
 
   program.parse(process.argv);
