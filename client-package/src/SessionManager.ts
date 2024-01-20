@@ -11,25 +11,27 @@ import { InferenceServer } from "./InferenceServer/InferenceServer.js";
 import { AutomaticInferenceServer } from "./InferenceServer/AutomaticInferenceServer.js";
 import { VoltaMLInferenceServer } from "./InferenceServer/VoltaMLInferenceServer.js";
 import { TestInferenceServer } from "./InferenceServer/TestInferenceServer.js";
+import { ComfyUIInferenceServer } from "./InferenceServer/ComfyUIInferenceServer.js";
 
-export type InferenceServerType = 'automatic' | 'voltaml' | 'test';
+export type InferenceServerType = 'automatic' | 'voltaml' | 'test' | 'comfyUI';
 
 export type SessionManagerOptions = {
-  inferenceServerUrl: string;
-  inferenceServerType: InferenceServerType;
+  mainServerWebSocketUrl: string;
+  inferenceServerUrl?: string;
+  inferenceServerType?: InferenceServerType;
 };
 
 export function parseSessionManagerOptions(): SessionManagerOptions {
   const program = new Command();
 
   program
-    .addOption(new Option('-c, --connect <url>', 'inference server url').default('ws://server:8080/'))
-    .addOption(new Option('-i, --inference-server <type>', 'inference server type').choices(['automatic', 'voltaml', 'test']).default('test'));
+    .addOption(new Option('-c, --connect <url>', 'main server webSocket url').default('ws://server:8080/'))
+    .addOption(new Option('-i, --inference-server <type>', 'inference server type').choices(['automatic', 'voltaml', 'test', 'comfyUI']).default('test'));
 
   program.parse(process.argv);
 
   const options = program.opts();
-  return { inferenceServerUrl: options.connect, inferenceServerType: options.inferenceServer };
+  return { mainServerWebSocketUrl: options.connect, inferenceServerType: options.inferenceServer };
 }
 
 /**
@@ -37,36 +39,55 @@ export function parseSessionManagerOptions(): SessionManagerOptions {
  */
 export class SessionManager {
   private _inferenceServerUrl?: string;
+  private _mainServerWebSocketUrl: string;
   private _tasksManager: TasksManager;
   private _inferenceServer: InferenceServer;
   private _ws: WebSocket | WebSocketNode;
 
   constructor(options: SessionManagerOptions) {
-    this._inferenceServerUrl = options.inferenceServerUrl;
+    const { inferenceServerUrl, mainServerWebSocketUrl, inferenceServerType } = options;
 
-    const inferenceServerType = options.inferenceServerType;
+    this._inferenceServerUrl = inferenceServerUrl;
+    this._mainServerWebSocketUrl = mainServerWebSocketUrl;
 
     switch (inferenceServerType) {
-      case 'test':
-        this._inferenceServer = new TestInferenceServer();
-        break;
       case 'automatic':
-        this._inferenceServer = new AutomaticInferenceServer({ inferenceServerUrl: this._inferenceServerUrl });
+        this._inferenceServer = new AutomaticInferenceServer({ inferenceServerUrl });
         break;
       case 'voltaml':
-        this._inferenceServer = new VoltaMLInferenceServer({ inferenceServerUrl: this._inferenceServerUrl });
+        this._inferenceServer = new VoltaMLInferenceServer({ inferenceServerUrl });
+        break;
+      case 'comfyUI':
+        this._inferenceServer = new ComfyUIInferenceServer({ inferenceServerUrl });
+        break;
+      default:
+        this._inferenceServer = new TestInferenceServer();
         break;
     }
 
     this._tasksManager = new TasksManager(this._inferenceServer);
 
     if (isNode) {
-      this._ws = new WebSocketNode(this._inferenceServerUrl);
+      this._ws = new WebSocketNode(this._mainServerWebSocketUrl);
     } else {
-      this._ws = new WebSocket(this._inferenceServerUrl);
+      this._ws = new WebSocket(this._mainServerWebSocketUrl);
     }
 
     this.setupSession();
+  }
+
+  public sendTestTask(taskData: Task) {
+    const isParsed = TaskZod.safeParse(taskData).success;
+
+      if (!isParsed) 
+        return console.log('Invalid task data:', taskData);
+
+      this._tasksManager.executeTask(taskData).then((result) => {
+        console.log('result', result);
+      }).catch((error) => {
+        console.log('Failed to execute task', error);
+      });
+    
   }
 
   private async setupSession() {
@@ -95,7 +116,15 @@ export class SessionManager {
 
     // Add a listener for the 'close' event
     const onSocketClose = () => {
-      console.log('WebSocket connection closed');
+      console.log('WebSocket connection closed, trying to reconnect...');
+
+      if (isNode) {
+        this._ws = new WebSocketNode(this._mainServerWebSocketUrl);
+      } else {
+        this._ws = new WebSocket(this._mainServerWebSocketUrl);
+      }
+
+      this.setupSession();
     };
 
     if (isWebSocketNode(ws)) {

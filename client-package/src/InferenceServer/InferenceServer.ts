@@ -1,4 +1,4 @@
-export type ImageGenerationOptions = {
+export type StandardImageGenerationOptions = {
     modelName?: string;
     positivePrompt: string;
     negativePrompt?: string;
@@ -16,6 +16,13 @@ export type ImageGenerationOptions = {
     }
 };
 
+export type ImageGenerationOptions = {
+    standardPipeline?: StandardImageGenerationOptions;
+    comfyPipeline?: {
+        pipelineData: string;
+    } 
+}
+
 export type ImageGenerationResponse = {
     imagesUrls: string[];
     info: string;
@@ -28,20 +35,24 @@ export interface InferenceServer {
     getLoadedModels(): Promise<string[]>;
 }
 
-export const DefaultImageGenerationOptions: Required<ImageGenerationOptions> = {
-    modelName: 'stabilityai/stable-diffusion-2-1',
-    positivePrompt: '',
-    negativePrompt: '',
-    size: {
-        width: 512,
-        height: 512,
-    },
-    numberOfSteps: 25,
-    guidanceScale: 8,
-    seed: 123,
-    batchSize: 1,
-    batchCount: 1,
-    textToImage: {
-        imageUrl: ''
+export const DefaultImageGenerationOptions: DeepRequired<Pick<ImageGenerationOptions, 'standardPipeline'>> = {
+    standardPipeline: {
+        modelName: 'stabilityai/stable-diffusion-2-1',
+        positivePrompt: '',
+        negativePrompt: '',
+        size: {
+            width: 512,
+            height: 512,
+        },
+        numberOfSteps: 25,
+        guidanceScale: 8,
+        seed: 123,
+        batchSize: 1,
+        batchCount: 1,
+        textToImage: {
+            imageUrl: ''
+        }
     }
 };
+
+type DeepRequired<T> = { [K in keyof T]: DeepRequired<T[K]>} & Required<T>

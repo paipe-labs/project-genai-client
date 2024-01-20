@@ -22,13 +22,21 @@ export class AutomaticInferenceServer implements InferenceServer {
 
     async generateImage(options: ImageGenerationOptions): Promise<ImageGenerationResponse> {
         const { _automaticClient } = this;
-        const { positivePrompt, numberOfSteps } = options;
+
+        if (!options.standardPipeline) {
+            throw new Error('Automatic inference server requires standard pipeline options');
+        }
+
+        const { positivePrompt, numberOfSteps, size = {width: 512, height: 512} } = options.standardPipeline;
 
         console.log('Attempt to generate image with automatic inference server');
         const images = await _automaticClient
             .txt2img({
+                samplingMethod: 'DPM++ 2M Karras',
+                width: size.width,
+                height: size.height,
                 prompt: positivePrompt,
-                steps: numberOfSteps ?? DefaultImageGenerationOptions.numberOfSteps
+                steps: numberOfSteps ?? DefaultImageGenerationOptions.standardPipeline.numberOfSteps
             })
 
         return { imagesUrls: images.images, info: images.info };

@@ -5,7 +5,8 @@
   "main": "./public/index.js",
   "type": "module",
   "scripts": {
-    "start": "cross-env NODE_ENV=production ts-node-esm --files -r tsconfig-paths/register ./src/run.ts",
+    "start": "cross-env NODE_ENV=production ts-node-esm --files -r tsconfig-paths/register ./src/run.ts -c 'wss://api.genai.network'",
+    "test:comfyui": "cross-env NODE_ENV=production ts-node-esm --files -r tsconfig-paths/register ./src/testRun.ts -c 'wss://api.genai.network'",
     "watch": "cross-env ts-node-dev --files --respawn --inspect -r tsconfig-paths/register ./src",
     "build": "yarn rm:public && cross-env NODE_ENV=production tsc && tsc-alias",
     "rm:public": "rm -rf ./public",
@@ -21,6 +22,7 @@
     "axios": "^1.4.0",
     "body-parser": "^1.20.2",
     "browser-or-node": "^2.1.1",
+    "comfy-ui-client": "^0.1.2",
     "commander": "^11.1.0",
     "jsonwebtoken": "^9.0.0",
     "node-sd-webui": "^0.0.8",

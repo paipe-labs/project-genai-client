@@ -18,22 +18,26 @@ export class VoltaMLInferenceServer implements InferenceServer {
     }
     
     async generateImage(options: ImageGenerationOptions): Promise<ImageGenerationResponse> {
-        const { positivePrompt, negativePrompt, size, numberOfSteps, guidanceScale, batchCount, batchSize } = options;
+        if (options.standardPipeline === undefined) {
+            throw new Error('VoltaML inference server requires standard pipeline options');
+        }
+
+        const { positivePrompt, negativePrompt, size, numberOfSteps, guidanceScale, batchCount, batchSize } = options.standardPipeline;
 
         const generation = await axios.post(`${this._inferenceServerUrl}/generate/txt2img`, {
             backend: 'PyTorch',
             autoload: false,
             data: {
                 id: uuidv4(),
-                prompt: positivePrompt ?? DefaultImageGenerationOptions.positivePrompt,
-                negative_prompt: negativePrompt ?? DefaultImageGenerationOptions.negativePrompt,
-                width: size?.width ?? DefaultImageGenerationOptions.size.width,
-                height: size?.height ?? DefaultImageGenerationOptions.size.height,
-                steps: numberOfSteps ?? DefaultImageGenerationOptions.numberOfSteps,
-                guidance_scale: guidanceScale ?? DefaultImageGenerationOptions.guidanceScale,
+                prompt: positivePrompt ?? DefaultImageGenerationOptions.standardPipeline.positivePrompt,
+                negative_prompt: negativePrompt ?? DefaultImageGenerationOptions.standardPipeline.negativePrompt,
+                width: size?.width ?? DefaultImageGenerationOptions.standardPipeline.size.width,
+                height: size?.height ?? DefaultImageGenerationOptions.standardPipeline.size.height,
+                steps: numberOfSteps ?? DefaultImageGenerationOptions.standardPipeline.numberOfSteps,
+                guidance_scale: guidanceScale ?? DefaultImageGenerationOptions.standardPipeline.guidanceScale,
                 seed: Math.floor(Math.random() * 1000000000),
-                batch_size: batchSize ?? DefaultImageGenerationOptions.batchSize,
-                batch_count: batchCount ?? DefaultImageGenerationOptions.batchCount,
+                batch_size: batchSize ?? DefaultImageGenerationOptions.standardPipeline.batchSize,
+                batch_count: batchCount ?? DefaultImageGenerationOptions.standardPipeline.batchCount,
                 scheduler: 5,
                 self_attention_scale: 0
             },
