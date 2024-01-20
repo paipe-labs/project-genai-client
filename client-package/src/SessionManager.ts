@@ -45,20 +45,20 @@ export class SessionManager {
   private _ws: WebSocket | WebSocketNode;
 
   constructor(options: SessionManagerOptions) {
-    this._inferenceServerUrl = options.inferenceServerUrl;
-    this._mainServerWebSocketUrl = options.mainServerWebSocketUrl;
+    const { inferenceServerUrl, mainServerWebSocketUrl, inferenceServerType } = options;
 
-    const inferenceServerType = options.inferenceServerType;
+    this._inferenceServerUrl = inferenceServerUrl;
+    this._mainServerWebSocketUrl = mainServerWebSocketUrl;
 
     switch (inferenceServerType) {
       case 'automatic':
-        this._inferenceServer = new AutomaticInferenceServer({ inferenceServerUrl: this._inferenceServerUrl });
+        this._inferenceServer = new AutomaticInferenceServer({ inferenceServerUrl });
         break;
       case 'voltaml':
-        this._inferenceServer = new VoltaMLInferenceServer({ inferenceServerUrl: this._inferenceServerUrl });
+        this._inferenceServer = new VoltaMLInferenceServer({ inferenceServerUrl });
         break;
       case 'comfyUI':
-        this._inferenceServer = new ComfyUIInferenceServer({ inferenceServerUrl: this._inferenceServerUrl });
+        this._inferenceServer = new ComfyUIInferenceServer({ inferenceServerUrl });
         break;
       default:
         this._inferenceServer = new TestInferenceServer();
