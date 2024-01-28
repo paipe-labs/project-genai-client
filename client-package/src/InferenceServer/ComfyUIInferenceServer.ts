@@ -1,4 +1,4 @@
-import { DefaultImageGenerationOptions, ImageGenerationOptions, ImageGenerationResponse, InferenceServer } from "./InferenceServer.js";
+import { ImageGenerationOptions, ImageGenerationResponse, InferenceServer } from "./InferenceServer.js";
 import { ComfyUIClient, type Prompt } from "comfy-ui-client";
 import { uuidv4 } from "../helpers/uuid.js";
 
@@ -20,6 +20,7 @@ export class ComfyUIInferenceServer implements InferenceServer {
 
         const clientId = uuidv4();
         this._comfyClient = new ComfyUIClient(this._inferenceServerUrl, clientId);
+        this._comfyClient.connect();
     }
 
     async generateImage(options: ImageGenerationOptions): Promise<ImageGenerationResponse> {
@@ -32,7 +33,17 @@ export class ComfyUIInferenceServer implements InferenceServer {
 
         const comfyPrompt = JSON.parse(pipelineData) as Prompt;
 
-        _comfyClient.connect();
+        try {
+            const queue = await _comfyClient.getQueue();
+
+            const isConnected = queue?.queue_running !== undefined;
+
+            if (!isConnected) {
+                _comfyClient.connect();
+            }
+        } catch (error) {
+            _comfyClient.connect();
+        }
 
         console.log('Attempt to generate image with comfyUI inference server');
         const imageResponses = await _comfyClient.getImages(comfyPrompt);
@@ -46,7 +57,7 @@ export class ComfyUIInferenceServer implements InferenceServer {
             }
         }
 
-        return { imagesUrls, info: 'Meow' };
+        return { imagesUrls, info: 'Image created' };
 
     }
 
@@ -63,7 +74,7 @@ export class ComfyUIInferenceServer implements InferenceServer {
     }
 
     private async blobToBase64Url(blob: Blob) {
-        const buffer = Buffer.from(await blob.text());
+        const buffer = Buffer.from(await blob.arrayBuffer());
         return "data:" + blob.type + ';base64,' + buffer.toString('base64');
     }
 }
