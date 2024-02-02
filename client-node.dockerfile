@@ -18,4 +18,4 @@ COPY client-package .
 
 RUN yarn build
 
-ENTRYPOINT [ "npx", "ts-node", "public/run.js" ]
+#ENTRYPOINT [ "npx", "ts-node", "public/run.js" ]
