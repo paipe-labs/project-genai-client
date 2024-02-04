@@ -1,6 +1,26 @@
-import { ImageGenerationOptions, ImageGenerationResponse, InferenceServer } from "./InferenceServer.js";
 import { ComfyUIClient, type Prompt } from "comfy-ui-client";
+
+import ReconnectingWebSocket from 'reconnecting-websocket';
+import { WebSocket } from 'ws';
+
+import { ImageGenerationOptions, ImageGenerationResponse, InferenceServer } from "./InferenceServer.js";
 import { uuidv4 } from "../helpers/uuid.js";
+
+function waitForComfyUIWebSocketConnection(ws: ReconnectingWebSocket, client: ComfyUIClient) {
+    setTimeout(
+        function () {
+            if (ws.readyState === 1) {
+                ws.close();
+                client.connect();
+                return;
+            } else {
+                console.log("Waiting for ComfyUI webSocket connection");
+                waitForComfyUIWebSocketConnection(ws, client);
+            }
+        },
+        1000
+    );
+}
 
 export type ComfyUIInferenceServerOptions = {
     inferenceServerUrl?: string;
@@ -20,7 +40,10 @@ export class ComfyUIInferenceServer implements InferenceServer {
 
         const clientId = uuidv4();
         this._comfyClient = new ComfyUIClient(this._inferenceServerUrl, clientId);
-        this._comfyClient.connect();
+
+        const comfyWebSocketUrl = `ws://${inferenceServerUrl}/ws`
+        const ws = new ReconnectingWebSocket(comfyWebSocketUrl, [], { WebSocket: WebSocket });
+        waitForComfyUIWebSocketConnection(ws, this._comfyClient);
     }
 
     async generateImage(options: ImageGenerationOptions): Promise<ImageGenerationResponse> {

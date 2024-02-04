@@ -28,6 +28,7 @@
     "jsonwebtoken": "^9.0.0",
     "node-sd-webui": "^0.0.8",
     "queue": "^7.0.0",
+    "reconnecting-websocket": "^4.4.0",
     "ws": "^8.13.0",
     "zod": "^3.22.2"
   },
