@@ -7,16 +7,17 @@ import { Command, Option } from 'commander';
 import { isNode } from 'browser-or-node';
 import { Task, TaskResult, TaskZod } from "./types.js";
 import { TasksManager } from "./TasksManager.js";
+
 import { InferenceServer } from "./InferenceServer/InferenceServer.js";
 import { AutomaticInferenceServer } from "./InferenceServer/AutomaticInferenceServer.js";
 import { VoltaMLInferenceServer } from "./InferenceServer/VoltaMLInferenceServer.js";
-import { TestInferenceServer } from "./InferenceServer/TestInferenceServer.js";
 import { ComfyUIInferenceServer } from "./InferenceServer/ComfyUIInferenceServer.js";
+import { TestInferenceServer } from "./InferenceServer/TestInferenceServer.js";
 
-export type InferenceServerType = 'automatic' | 'voltaml' | 'test' | 'comfyUI';
+export type InferenceServerType = 'automatic' | 'voltaml' | 'comfyUI' | 'test';
 
 export type SessionManagerOptions = {
-  mainServerWebSocketUrl: string;
+  backendServerWebSocketUrl: string;
   inferenceServerUrl?: string;
   inferenceServerType?: InferenceServerType;
 };
@@ -25,13 +26,14 @@ export function parseSessionManagerOptions(): SessionManagerOptions {
   const program = new Command();
 
   program
-    .addOption(new Option('-c, --connect <url>', 'main server webSocket url').default('ws://server:8080/'))
-    .addOption(new Option('-i, --inference-server <type>', 'inference server type').choices(['automatic', 'voltaml', 'test', 'comfyUI']).default('test'));
+    .addOption(new Option('-b, --backend <url>', 'backend server webSocket url').default('ws://server:8080/'))
+    .addOption(new Option('-i, --inference <url>', 'inference server url'))
+    .addOption(new Option('-t, --type <type>', 'inference server type').choices(['automatic', 'voltaml', 'comfyUI', 'test']).default('test'));
 
   program.parse(process.argv);
 
   const options = program.opts();
-  return { mainServerWebSocketUrl: options.connect, inferenceServerType: options.inferenceServer };
+  return { backendServerWebSocketUrl: options.backend, inferenceServerUrl: options.inference, inferenceServerType: options.type };
 }
 
 /**
@@ -39,16 +41,16 @@ export function parseSessionManagerOptions(): SessionManagerOptions {
  */
 export class SessionManager {
   private _inferenceServerUrl?: string;
-  private _mainServerWebSocketUrl: string;
+  private _backendServerWebSocketUrl: string;
   private _tasksManager: TasksManager;
   private _inferenceServer: InferenceServer;
   private _ws: WebSocket | WebSocketNode;
 
   constructor(options: SessionManagerOptions) {
-    const { inferenceServerUrl, mainServerWebSocketUrl, inferenceServerType } = options;
+    const { backendServerWebSocketUrl, inferenceServerUrl, inferenceServerType } = options;
 
     this._inferenceServerUrl = inferenceServerUrl;
-    this._mainServerWebSocketUrl = mainServerWebSocketUrl;
+    this._backendServerWebSocketUrl = backendServerWebSocketUrl;
 
     switch (inferenceServerType) {
       case 'automatic':
@@ -68,9 +70,9 @@ export class SessionManager {
     this._tasksManager = new TasksManager(this._inferenceServer);
 
     if (isNode) {
-      this._ws = new WebSocketNode(this._mainServerWebSocketUrl);
+      this._ws = new WebSocketNode(this._backendServerWebSocketUrl);
     } else {
-      this._ws = new WebSocket(this._mainServerWebSocketUrl);
+      this._ws = new WebSocket(this._backendServerWebSocketUrl);
     }
 
     this.setupSession();
@@ -79,15 +81,15 @@ export class SessionManager {
   public sendTestTask(taskData: Task) {
     const isParsed = TaskZod.safeParse(taskData).success;
 
-      if (!isParsed) 
-        return console.log('Invalid task data:', taskData);
+    if (!isParsed)
+      return console.log('Invalid task data:', taskData);
 
-      this._tasksManager.executeTask(taskData).then((result) => {
-        console.log('result', result);
-      }).catch((error) => {
-        console.log('Failed to execute task', error);
-      });
-    
+    this._tasksManager.executeTask(taskData).then((result) => {
+      console.log('result', result);
+    }).catch((error) => {
+      console.log('Failed to execute task', error);
+    });
+
   }
 
   private async setupSession() {
@@ -119,9 +121,9 @@ export class SessionManager {
       console.log('WebSocket connection closed, trying to reconnect...');
 
       if (isNode) {
-        this._ws = new WebSocketNode(this._mainServerWebSocketUrl);
+        this._ws = new WebSocketNode(this._backendServerWebSocketUrl);
       } else {
-        this._ws = new WebSocket(this._mainServerWebSocketUrl);
+        this._ws = new WebSocket(this._backendServerWebSocketUrl);
       }
 
       this.setupSession();
