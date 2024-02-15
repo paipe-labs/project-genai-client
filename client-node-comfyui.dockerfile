@@ -1,4 +1,4 @@
-FROM ghcr.io/ai-dock/comfyui:latest
+FROM ghcr.io/ai-dock/comfyui:latest-cpu
 
 
 ################################## install curl & jq ####################################
@@ -40,4 +40,4 @@ ENV DIRECT_ADDRESS=localhost
 ENV COMFYUI_PORT=8188
 ENV WEB_ENABLE_AUTH=false
 
-CMD init.sh & npx ts-node public/run.js -t comfyUI -i ${DIRECT_ADDRESS}:${COMFYUI_PORT}
+CMD init.sh & npx ts-node public/run.js
