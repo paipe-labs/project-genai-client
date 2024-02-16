@@ -20,7 +20,7 @@ export class AutomaticInferenceServer implements InferenceServer {
         this._automaticClient = sdwebui({apiUrl: this._inferenceServerUrl});
     }
 
-    async connectInference(): Promise<void> {
+    async setupInferenceSession(): Promise<void> {
         return;
     }
 

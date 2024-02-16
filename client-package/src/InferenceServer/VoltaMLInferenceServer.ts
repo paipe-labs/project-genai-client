@@ -17,7 +17,7 @@ export class VoltaMLInferenceServer implements InferenceServer {
         this._inferenceServerUrl = inferenceServerUrl ?? this.DefaultOptions.inferenceServerUrl;
     }
 
-    async connectInference(): Promise<void> {
+    async setupInferenceSession(): Promise<void> {
         return;
     }
     

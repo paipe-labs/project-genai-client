@@ -25,7 +25,7 @@ export class ComfyUIInferenceServer implements InferenceServer {
         this._comfyClient = new ComfyUIClient(this._inferenceServerUrl, clientId);
     }
 
-    async connectInference(): Promise<void> {
+    async setupInferenceSession(): Promise<void> {
         const comfyWebSocketUrl = `ws://${this._inferenceServerUrl}/ws`
         await waitForWebSocketConnection(comfyWebSocketUrl);
 
@@ -40,8 +40,16 @@ export class ComfyUIInferenceServer implements InferenceServer {
             throw new Error('ComfyUI inference server requires comfyUI pipeline options');
         }
         const { pipelineData } = options.comfyPipeline;
-
         const comfyPrompt = JSON.parse(pipelineData) as Prompt;
+
+        if (options.comfyPipeline.pipelineImages !== undefined) {
+            const { pipelineImages } = options.comfyPipeline;
+            const comfyImages = new Map<string, string>(Object.entries(JSON.parse(pipelineImages)));
+            for (const [imageName, image] of comfyImages) {
+                await _comfyClient.uploadImage(Buffer.from(image, 'base64'), imageName, true);
+            }
+        }
+
         try {
             const queue = await _comfyClient.getQueue();
 

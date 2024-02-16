@@ -2,7 +2,7 @@ import { DefaultImageGenerationOptions, ImageGenerationOptions, ImageGenerationR
 
 export class TestInferenceServer implements InferenceServer {
 
-    async connectInference(): Promise<void> {
+    async setupInferenceSession(): Promise<void> {
         return;
     }
 
