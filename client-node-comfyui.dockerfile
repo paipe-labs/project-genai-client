@@ -40,4 +40,4 @@ ENV DIRECT_ADDRESS=localhost
 ENV COMFYUI_PORT=8188
 ENV WEB_ENABLE_AUTH=false
 
-CMD init.sh & npx ts-node public/run.js
+CMD init.sh & npx ts-node public/run.js -t comfyUI -i ${DIRECT_ADDRESS}:${COMFYUI_PORT}

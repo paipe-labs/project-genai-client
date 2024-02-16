@@ -2,6 +2,10 @@ import { DefaultImageGenerationOptions, ImageGenerationOptions, ImageGenerationR
 
 export class TestInferenceServer implements InferenceServer {
 
+    async connectInference(): Promise<void> {
+        return;
+    }
+
     async generateImage(options: ImageGenerationOptions): Promise<ImageGenerationResponse> {
         console.log('Attempt to generate image with test inference server', options);
 

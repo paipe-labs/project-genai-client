@@ -16,6 +16,10 @@ export class VoltaMLInferenceServer implements InferenceServer {
     constructor({ inferenceServerUrl }: VoltaMLInferenceServerOptions) {
         this._inferenceServerUrl = inferenceServerUrl ?? this.DefaultOptions.inferenceServerUrl;
     }
+
+    async connectInference(): Promise<void> {
+        return;
+    }
     
     async generateImage(options: ImageGenerationOptions): Promise<ImageGenerationResponse> {
         if (options.standardPipeline === undefined) {

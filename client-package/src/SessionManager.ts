@@ -44,7 +44,7 @@ export class SessionManager {
   private _backendServerWebSocketUrl: string;
   private _tasksManager: TasksManager;
   private _inferenceServer: InferenceServer;
-  private _ws: WebSocket | WebSocketNode;
+  private _ws?: WebSocket | WebSocketNode;
 
   constructor(options: SessionManagerOptions) {
     const { backendServerWebSocketUrl, inferenceServerUrl, inferenceServerType } = options;
@@ -69,12 +69,6 @@ export class SessionManager {
 
     this._tasksManager = new TasksManager(this._inferenceServer);
 
-    if (isNode) {
-      this._ws = new WebSocketNode(this._backendServerWebSocketUrl);
-    } else {
-      this._ws = new WebSocket(this._backendServerWebSocketUrl);
-    }
-
     this.setupSession();
   }
 
@@ -93,11 +87,21 @@ export class SessionManager {
   }
 
   private async setupSession() {
+    await this._inferenceServer.connectInference();
+    this.setupServerSession();
+  }
+
+  private async setupServerSession() {
+    if (isNode) {
+      this._ws = new WebSocketNode(this._backendServerWebSocketUrl);
+    } else {
+      this._ws = new WebSocket(this._backendServerWebSocketUrl);
+    }
     const { _ws: ws } = this;
 
     const onSocketOpen = () => {
       ws.send(JSON.stringify({ type: 'register', node_id: uuidv4() }));
-      console.log('WebSocket connection opened');
+      console.log('Server WebSocket connection opened');
     };
 
     const onSocketMessage = async (taskData: Task) => {
@@ -109,7 +113,7 @@ export class SessionManager {
       const { taskId } = taskData;
 
       this._tasksManager.executeTask(taskData).then((result) => {
-        this.sendTaskResult({ type: 'result', status: 'ready', taskId: taskId, resultsUrl: result.imagesUrls });
+        ws.send(JSON.stringify({ type: 'result', status: 'ready', taskId: taskId, resultsUrl: result.imagesUrls }));
       }).catch((error) => {
         ws.send(JSON.stringify({ type: 'error', status: 'error', taskId: taskId, error: JSON.stringify(error) }));
       });
@@ -119,14 +123,7 @@ export class SessionManager {
     // Add a listener for the 'close' event
     const onSocketClose = () => {
       console.log('WebSocket connection closed, trying to reconnect...');
-
-      if (isNode) {
-        this._ws = new WebSocketNode(this._backendServerWebSocketUrl);
-      } else {
-        this._ws = new WebSocket(this._backendServerWebSocketUrl);
-      }
-
-      this.setupSession();
+      this.setupServerSession();
     };
 
     if (isWebSocketNode(ws)) {
@@ -139,11 +136,6 @@ export class SessionManager {
       ws.addEventListener('close', onSocketClose);
     }
   }
-
-  private sendTaskResult(taskResult: TaskResult) {
-    this._ws.send(JSON.stringify(taskResult));
-  }
-
 }
 
 export const getWebsocketConnectionEndpoint = async () => {

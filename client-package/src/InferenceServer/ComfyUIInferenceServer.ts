@@ -1,26 +1,9 @@
 import { ComfyUIClient, type Prompt } from "comfy-ui-client";
 
-import ReconnectingWebSocket from 'reconnecting-websocket';
 import { WebSocket } from 'ws';
 
 import { ImageGenerationOptions, ImageGenerationResponse, InferenceServer } from "./InferenceServer.js";
-import { uuidv4 } from "../helpers/uuid.js";
-
-function waitForComfyUIWebSocketConnection(ws: ReconnectingWebSocket, client: ComfyUIClient) {
-    setTimeout(
-        function () {
-            if (ws.readyState === 1) {
-                ws.close();
-                client.connect();
-                return;
-            } else {
-                console.log("Waiting for ComfyUI webSocket connection");
-                waitForComfyUIWebSocketConnection(ws, client);
-            }
-        },
-        1000
-    );
-}
+import { waitForWebSocketConnection, uuidv4 } from "../helpers/index.js";
 
 export type ComfyUIInferenceServerOptions = {
     inferenceServerUrl?: string;
@@ -40,10 +23,14 @@ export class ComfyUIInferenceServer implements InferenceServer {
 
         const clientId = uuidv4();
         this._comfyClient = new ComfyUIClient(this._inferenceServerUrl, clientId);
+    }
 
-        const comfyWebSocketUrl = `ws://${inferenceServerUrl}/ws`
-        const ws = new ReconnectingWebSocket(comfyWebSocketUrl, [], { WebSocket: WebSocket });
-        waitForComfyUIWebSocketConnection(ws, this._comfyClient);
+    async connectInference(): Promise<void> {
+        const comfyWebSocketUrl = `ws://${this._inferenceServerUrl}/ws`
+        await waitForWebSocketConnection(comfyWebSocketUrl);
+
+        this._comfyClient.connect();
+        console.log("ComfyUI WebSocket connection opened")
     }
 
     async generateImage(options: ImageGenerationOptions): Promise<ImageGenerationResponse> {
@@ -55,7 +42,6 @@ export class ComfyUIInferenceServer implements InferenceServer {
         const { pipelineData } = options.comfyPipeline;
 
         const comfyPrompt = JSON.parse(pipelineData) as Prompt;
-
         try {
             const queue = await _comfyClient.getQueue();
 

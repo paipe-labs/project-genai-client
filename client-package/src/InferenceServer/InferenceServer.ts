@@ -29,6 +29,7 @@ export type ImageGenerationResponse = {
 };
 
 export interface InferenceServer {
+    connectInference(): Promise<void>;
     generateImage(options: ImageGenerationOptions): Promise<ImageGenerationResponse>;
     loadModel(modelName: string): Promise<void>;
     unloadModel(modelName: string): Promise<void>;
