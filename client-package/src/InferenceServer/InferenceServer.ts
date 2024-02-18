@@ -16,11 +16,15 @@ export type StandardImageGenerationOptions = {
     }
 };
 
+export type ComfyPipelineDependencies = {
+    images?: string;
+}
+
 export type ImageGenerationOptions = {
     standardPipeline?: StandardImageGenerationOptions;
     comfyPipeline?: {
         pipelineData: string;
-        pipelineImages?: string;
+        pipelineDependencies?: ComfyPipelineDependencies
     } 
 }
 

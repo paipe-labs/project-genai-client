@@ -9,7 +9,9 @@ export const TaskZod = z.object({
     }).optional(),
     comfyOptions: z.object({
         pipelineData: z.string(),
-        pipelineImages: z.string().optional(),
+        pipelineDependencies: z.object({
+            images: z.string().optional(),
+        }).optional(),
     }).optional(),
     taskId: z.string(),
 });

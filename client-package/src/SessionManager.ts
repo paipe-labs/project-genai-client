@@ -88,7 +88,7 @@ export class SessionManager {
 
   private async setupSession() {
     await this._inferenceServer.setupInferenceSession();
-    this.setupServerSession();
+    await this.setupServerSession();
   }
 
   private async setupServerSession() {

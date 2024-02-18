@@ -1,8 +1,9 @@
-import { ComfyUIClient, type Prompt } from "comfy-ui-client";
+import { ComfyUIClient } from "comfy-ui-client";
+import type { UploadImageResult, Prompt } from "comfy-ui-client";
 
 import { WebSocket } from 'ws';
 
-import { ImageGenerationOptions, ImageGenerationResponse, InferenceServer } from "./InferenceServer.js";
+import { ComfyPipelineDependencies, ImageGenerationOptions, ImageGenerationResponse, InferenceServer } from "./InferenceServer.js";
 import { waitForWebSocketConnection, uuidv4 } from "../helpers/index.js";
 
 export type ComfyUIInferenceServerOptions = {
@@ -39,15 +40,12 @@ export class ComfyUIInferenceServer implements InferenceServer {
         if (options.comfyPipeline === undefined) {
             throw new Error('ComfyUI inference server requires comfyUI pipeline options');
         }
-        const { pipelineData } = options.comfyPipeline;
-        const comfyPrompt = JSON.parse(pipelineData) as Prompt;
 
-        if (options.comfyPipeline.pipelineImages !== undefined) {
-            const { pipelineImages } = options.comfyPipeline;
-            const comfyImages = new Map<string, string>(Object.entries(JSON.parse(pipelineImages)));
-            for (const [imageName, image] of comfyImages) {
-                await _comfyClient.uploadImage(Buffer.from(image, 'base64'), imageName, true);
-            }
+        const { pipelineData } = options.comfyPipeline;
+        const { pipelineDependencies } = options.comfyPipeline
+        
+        if (pipelineDependencies !== undefined) {
+            this.resolvePipelineDependencies(pipelineData, pipelineDependencies);
         }
 
         try {
@@ -63,6 +61,7 @@ export class ComfyUIInferenceServer implements InferenceServer {
         }
 
         console.log('Attempt to generate image with comfyUI inference server');
+        const comfyPrompt = JSON.parse(pipelineData) as Prompt;
         const imageResponses = await _comfyClient.getImages(comfyPrompt);
 
         const imagesUrls: string[] = [];
@@ -93,5 +92,22 @@ export class ComfyUIInferenceServer implements InferenceServer {
     private async blobToBase64Url(blob: Blob) {
         const buffer = Buffer.from(await blob.arrayBuffer());
         return "data:" + blob.type + ';base64,' + buffer.toString('base64');
+    }
+
+    private async resolvePipelineDependencies(pipelineData: string, pipelineDependencies: ComfyPipelineDependencies) {
+        const argumentToValue = new Map<string, string>();
+
+        const { images } = pipelineDependencies;
+        if (images !== undefined) {
+            const imageNameToImage = Object.entries<string>(JSON.parse(images));
+            for (const [imageName, image] of imageNameToImage) {
+                const response: UploadImageResult = await this._comfyClient.uploadImage(Buffer.from(image, 'base64'), imageName);
+                argumentToValue.set(imageName, response.name);
+            }
+        }
+
+        for (const [argument, value] of argumentToValue) {
+            pipelineData.replace(argument, value);
+        }
     }
 }

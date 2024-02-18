@@ -16,21 +16,23 @@ const comfyPipeline = {
     },
     "10": {
         "inputs": {
-            "image": "image.png",
+            "image": "paipe://input_image",
             "upload": "image"
         },
         "class_type": "LoadImage"
     }
 };
 
-const comfyImages = {
-    "image.png": "iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII"
+const images = {
+    "paipe://input_image": "iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII"
 }
 
 sessionManager.sendTestTask({
     taskId: 'test', 
     comfyOptions: {
         pipelineData: JSON.stringify(comfyPipeline),
-        pipelineImages: JSON.stringify(comfyImages),
+        pipelineDependencies: {
+            images: JSON.stringify(images)
+        },
     }
 })
