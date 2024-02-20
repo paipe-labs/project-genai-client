@@ -27,6 +27,7 @@ export class ComfyUIInferenceServer implements InferenceServer {
     }
 
     async setupInferenceSession(): Promise<void> {
+        // https://github.com/comfyanonymous/ComfyUI/blob/0d0fbabd1d153611a1c21aea3515d16339abc84f/server.py#L100
         const comfyWebSocketUrl = `ws://${this._inferenceServerUrl}/ws`
         await waitForWebSocketConnection(comfyWebSocketUrl);
 
@@ -101,7 +102,7 @@ export class ComfyUIInferenceServer implements InferenceServer {
         if (images !== undefined) {
             const imageNameToImage = Object.entries<string>(JSON.parse(images));
             for (const [imageName, image] of imageNameToImage) {
-                const response: UploadImageResult = await this._comfyClient.uploadImage(Buffer.from(image, 'base64'), imageName);
+                const response = await this._comfyClient.uploadImage(Buffer.from(image, 'base64'), imageName);
                 argumentToValue.set(imageName, response.name);
             }
         }
