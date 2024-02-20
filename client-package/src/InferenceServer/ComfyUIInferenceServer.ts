@@ -1,26 +1,10 @@
-import { ComfyUIClient, type Prompt } from "comfy-ui-client";
+import { ComfyUIClient } from "comfy-ui-client";
+import type { UploadImageResult, Prompt } from "comfy-ui-client";
 
-import ReconnectingWebSocket from 'reconnecting-websocket';
 import { WebSocket } from 'ws';
 
-import { ImageGenerationOptions, ImageGenerationResponse, InferenceServer } from "./InferenceServer.js";
-import { uuidv4 } from "../helpers/uuid.js";
-
-function waitForComfyUIWebSocketConnection(ws: ReconnectingWebSocket, client: ComfyUIClient) {
-    setTimeout(
-        function () {
-            if (ws.readyState === 1) {
-                ws.close();
-                client.connect();
-                return;
-            } else {
-                console.log("Waiting for ComfyUI webSocket connection");
-                waitForComfyUIWebSocketConnection(ws, client);
-            }
-        },
-        1000
-    );
-}
+import { ComfyPipelineDependencies, ImageGenerationOptions, ImageGenerationResponse, InferenceServer } from "./InferenceServer.js";
+import { waitForWebSocketConnection, uuidv4 } from "../helpers/index.js";
 
 export type ComfyUIInferenceServerOptions = {
     inferenceServerUrl?: string;
@@ -40,10 +24,15 @@ export class ComfyUIInferenceServer implements InferenceServer {
 
         const clientId = uuidv4();
         this._comfyClient = new ComfyUIClient(this._inferenceServerUrl, clientId);
+    }
 
-        const comfyWebSocketUrl = `ws://${inferenceServerUrl}/ws`
-        const ws = new ReconnectingWebSocket(comfyWebSocketUrl, [], { WebSocket: WebSocket });
-        waitForComfyUIWebSocketConnection(ws, this._comfyClient);
+    async setupInferenceSession(): Promise<void> {
+        // https://github.com/comfyanonymous/ComfyUI/blob/0d0fbabd1d153611a1c21aea3515d16339abc84f/server.py#L100
+        const comfyWebSocketUrl = `ws://${this._inferenceServerUrl}/ws`
+        await waitForWebSocketConnection(comfyWebSocketUrl);
+
+        this._comfyClient.connect();
+        console.log("ComfyUI WebSocket connection opened")
     }
 
     async generateImage(options: ImageGenerationOptions): Promise<ImageGenerationResponse> {
@@ -52,9 +41,13 @@ export class ComfyUIInferenceServer implements InferenceServer {
         if (options.comfyPipeline === undefined) {
             throw new Error('ComfyUI inference server requires comfyUI pipeline options');
         }
-        const { pipelineData } = options.comfyPipeline;
 
-        const comfyPrompt = JSON.parse(pipelineData) as Prompt;
+        const { pipelineData } = options.comfyPipeline;
+        const { pipelineDependencies } = options.comfyPipeline
+        
+        if (pipelineDependencies !== undefined) {
+            this.resolvePipelineDependencies(pipelineData, pipelineDependencies);
+        }
 
         try {
             const queue = await _comfyClient.getQueue();
@@ -69,6 +62,7 @@ export class ComfyUIInferenceServer implements InferenceServer {
         }
 
         console.log('Attempt to generate image with comfyUI inference server');
+        const comfyPrompt = JSON.parse(pipelineData) as Prompt;
         const imageResponses = await _comfyClient.getImages(comfyPrompt);
 
         const imagesUrls: string[] = [];
@@ -99,5 +93,22 @@ export class ComfyUIInferenceServer implements InferenceServer {
     private async blobToBase64Url(blob: Blob) {
         const buffer = Buffer.from(await blob.arrayBuffer());
         return "data:" + blob.type + ';base64,' + buffer.toString('base64');
+    }
+
+    private async resolvePipelineDependencies(pipelineData: string, pipelineDependencies: ComfyPipelineDependencies) {
+        const argumentToValue = new Map<string, string>();
+
+        const { images } = pipelineDependencies;
+        if (images !== undefined) {
+            const imageNameToImage = Object.entries<string>(JSON.parse(images));
+            for (const [imageName, image] of imageNameToImage) {
+                const response = await this._comfyClient.uploadImage(Buffer.from(image, 'base64'), imageName);
+                argumentToValue.set(imageName, response.name);
+            }
+        }
+
+        for (const [argument, value] of argumentToValue) {
+            pipelineData.replace(argument, value);
+        }
     }
 }

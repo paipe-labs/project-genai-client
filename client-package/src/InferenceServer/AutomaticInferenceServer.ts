@@ -20,6 +20,10 @@ export class AutomaticInferenceServer implements InferenceServer {
         this._automaticClient = sdwebui({apiUrl: this._inferenceServerUrl});
     }
 
+    async setupInferenceSession(): Promise<void> {
+        return;
+    }
+
     async generateImage(options: ImageGenerationOptions): Promise<ImageGenerationResponse> {
         const { _automaticClient } = this;
 

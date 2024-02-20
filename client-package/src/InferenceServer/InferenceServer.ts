@@ -16,10 +16,15 @@ export type StandardImageGenerationOptions = {
     }
 };
 
+export type ComfyPipelineDependencies = {
+    images?: string;
+}
+
 export type ImageGenerationOptions = {
     standardPipeline?: StandardImageGenerationOptions;
     comfyPipeline?: {
         pipelineData: string;
+        pipelineDependencies?: ComfyPipelineDependencies
     } 
 }
 
@@ -29,6 +34,7 @@ export type ImageGenerationResponse = {
 };
 
 export interface InferenceServer {
+    setupInferenceSession(): Promise<void>;
     generateImage(options: ImageGenerationOptions): Promise<ImageGenerationResponse>;
     loadModel(modelName: string): Promise<void>;
     unloadModel(modelName: string): Promise<void>;

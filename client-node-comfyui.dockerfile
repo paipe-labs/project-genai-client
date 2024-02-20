@@ -1,4 +1,4 @@
-FROM ghcr.io/ai-dock/comfyui:latest
+FROM ghcr.io/ai-dock/comfyui:pytorch-2.0.1-py3.10-cpu-22.04
 
 
 ################################## install curl & jq ####################################
