@@ -4,15 +4,18 @@ export const TaskZod = z.object({
     options: z.object({
         prompt: z.string(),
         model: z.string(),
-        size: z.string().optional(),
-        steps: z.number().optional(),
-    }).optional(),
+        size: z.object({
+            width: z.number(),
+            height: z.number()
+        }).nullable(),
+        steps: z.number().nullable(),
+    }).nullable(),
     comfyOptions: z.object({
         pipelineData: z.string(),
         pipelineDependencies: z.object({
-            images: z.string().optional(),
-        }).optional(),
-    }).optional(),
+            images: z.string().nullable(),
+        }).nullable(),
+    }).nullable(),
     taskId: z.string(),
 });
 

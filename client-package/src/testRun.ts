@@ -28,11 +28,12 @@ const images = {
 }
 
 sessionManager.sendTestTask({
-    taskId: 'test', 
+    options: null,
     comfyOptions: {
         pipelineData: JSON.stringify(comfyPipeline),
         pipelineDependencies: {
             images: JSON.stringify(images)
         },
-    }
+    },
+    taskId: 'test',
 })

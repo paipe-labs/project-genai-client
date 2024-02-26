@@ -25,12 +25,14 @@
     "browser-or-node": "^2.1.1",
     "comfy-ui-client": "^0.1.2",
     "commander": "^11.1.0",
+    "json-schema-to-typescript": "^13.1.2",
     "jsonwebtoken": "^9.0.0",
     "node-sd-webui": "^0.0.8",
     "queue": "^7.0.0",
     "reconnecting-websocket": "^4.4.0",
     "ws": "^8.13.0",
-    "zod": "^3.22.2"
+    "zod": "^3.22.2",
+    "zod-to-json-schema": "^3.22.4"
   },
   "devDependencies": {
     "@types/cors": "^2.8.13",

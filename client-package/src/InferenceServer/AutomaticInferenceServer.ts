@@ -40,7 +40,7 @@ export class AutomaticInferenceServer implements InferenceServer {
                 width: size.width,
                 height: size.height,
                 prompt: positivePrompt,
-                steps: numberOfSteps ?? DefaultImageGenerationOptions.standardPipeline.numberOfSteps
+                steps: numberOfSteps
             })
 
         return { imagesUrls: images.images, info: images.info };
