@@ -23,7 +23,6 @@ WORKDIR /genai-node
 
 COPY client-package/package.json .
 COPY client-package/yarn.lock .
-
 RUN yarn install
 
 # dirty hack to make node-sd-webui work with our imports,
@@ -36,8 +35,6 @@ RUN yarn build
 
 
 ################################## run comfyUI & node ###################################
-ENV DIRECT_ADDRESS=localhost
-ENV COMFYUI_PORT=8188
 ENV WEB_ENABLE_AUTH=false
 
-CMD init.sh & npx ts-node public/run.js -t comfyUI -i ${DIRECT_ADDRESS}:${COMFYUI_PORT}
+CMD init.sh & node public/run.js -b 'ws://server:8080/' -i 'localhost:8188' -t 'comfyUI'
