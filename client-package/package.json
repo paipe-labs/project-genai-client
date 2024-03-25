@@ -5,13 +5,12 @@
   "main": "./public/index.js",
   "type": "module",
   "scripts": {
-    "start": "cross-env NODE_ENV=production ts-node-esm --files -r tsconfig-paths/register ./src/run.ts -c 'wss://api.genai.network'",
-    "start:local": "cross-env NODE_ENV=production ts-node-esm --files -r tsconfig-paths/register ./src/run.ts -c 'ws://localhost:8080'",
-    "test:comfyui": "cross-env NODE_ENV=production ts-node-esm --files -r tsconfig-paths/register ./src/testRun.ts -c 'wss://api.genai.network'",
-    "watch": "cross-env ts-node-dev --files --respawn --inspect -r tsconfig-paths/register ./src",
-    "build": "yarn rm:public && cross-env NODE_ENV=production tsc && tsc-alias",
+    "build": "yarn rm:public && yarn generate:schemas && tsc && tsc-alias",
     "rm:public": "rm -rf ./public",
-    "copy:files": "cp .env ./public/.env",
+    "rm:schemas": "rm -rf src/schemas",
+    "generate:schemas": "yarn rm:schemas && mkdir src/schemas && yarn generate:taskSchema && yarn generate:taskResultSchema",
+    "generate:taskSchema": "tsx src/buildSchema.ts -o task | jq --sort-keys > src/schemas/task_schema.json",
+    "generate:taskResultSchema": "tsx src/buildSchema.ts -o taskResult | jq --sort-keys > src/schemas/task_result_schema.json",
     "lint": "eslint --debug ./src",
     "lint:write": "eslint --debug ./src --fix",
     "prettier": "prettier \"**/*.+(js|jsx|json|css|md)\"",
@@ -25,25 +24,27 @@
     "browser-or-node": "^2.1.1",
     "comfy-ui-client": "^0.1.2",
     "commander": "^11.1.0",
+    "json-schema-to-typescript": "^13.1.2",
     "jsonwebtoken": "^9.0.0",
     "node-sd-webui": "^0.0.8",
     "queue": "^7.0.0",
     "reconnecting-websocket": "^4.4.0",
+    "tsc-alias": "^1.8.8",
+    "tsc-watch": "^6.0.4",
+    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.7.1",
+    "typescript": "^5.4.3",
     "ws": "^8.13.0",
-    "zod": "^3.22.2"
+    "zod": "^3.22.4",
+    "zod-to-json-schema": "^3.22.4"
   },
   "devDependencies": {
     "@types/cors": "^2.8.13",
     "@types/jsonwebtoken": "^9.0.2",
     "@types/node": "^20.1.3",
     "@types/ws": "^8.5.4",
-    "cross-env": "^7.0.3",
     "dotenv": "^16.1.2",
     "eslint": "^8.41.0",
-    "prettier": "^2.8.8",
-    "ts-node": "^10.9.1",
-    "tsc-alias": "^1.8.6",
-    "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.0.4"
+    "prettier": "^2.8.8"
   }
 }
