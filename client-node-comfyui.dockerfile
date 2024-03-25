@@ -1,4 +1,6 @@
-FROM ghcr.io/ai-dock/comfyui:pytorch-2.0.1-py3.10-cpu-22.04
+ARG COMFYUI_TAG=latest
+
+FROM ghcr.io/ai-dock/comfyui:${COMFYUI_TAG}
 
 
 ################################## install curl & jq ####################################
@@ -36,5 +38,6 @@ RUN yarn build
 
 ################################## run comfyUI & node ###################################
 ENV WEB_ENABLE_AUTH=false
+RUN init.sh &
 
-CMD init.sh & node public/run.js -b 'ws://server:8080/' -i 'localhost:8188' -t 'comfyUI'
+CMD node public/run.js -b 'wss://apiv2.paipe.io' -i 'localhost:8188' -t 'comfyUI'
