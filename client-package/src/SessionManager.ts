@@ -1,5 +1,5 @@
 import axios from "axios";
-import { prettyPrintJson, uuidv4 } from "./helpers/index.js";
+import { waitForWebSocketConnection, uuidv4 } from "./helpers/index.js";
 
 import { WebSocket as WebSocketNode } from 'ws';
 
@@ -92,6 +92,8 @@ export class SessionManager {
   }
 
   private async setupServerSession() {
+    await waitForWebSocketConnection(this._backendServerWebSocketUrl);
+
     if (isNode) {
       this._ws = new WebSocketNode(this._backendServerWebSocketUrl);
     } else {
