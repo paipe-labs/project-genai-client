@@ -1,4 +1,6 @@
-FROM ghcr.io/ai-dock/comfyui:pytorch-2.0.1-py3.10-cpu-22.04
+ARG COMFYUI_TAG=pytorch-2.2.0-py3.10-cuda-11.8.0-runtime-22.04
+
+FROM ghcr.io/ai-dock/comfyui:${COMFYUI_TAG}
 
 
 ################################## install curl & jq ####################################
@@ -9,12 +11,13 @@ RUN apt-get update \
 
 ############################### install node & npm & yarn ###############################
 ENV NODE_VERSION=20.9.0
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
 ENV NVM_DIR=/root/.nvm
+ENV PATH="/root/.nvm/versions/node/v${NODE_VERSION}/bin/:${PATH}"
+
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
 RUN . "$NVM_DIR/nvm.sh" && nvm install ${NODE_VERSION}
 RUN . "$NVM_DIR/nvm.sh" && nvm use v${NODE_VERSION}
 RUN . "$NVM_DIR/nvm.sh" && nvm alias default v${NODE_VERSION}
-ENV PATH="/root/.nvm/versions/node/v${NODE_VERSION}/bin/:${PATH}"
 RUN npm install -g yarn
 
 
@@ -37,4 +40,5 @@ RUN yarn build
 ################################## run comfyUI & node ###################################
 ENV WEB_ENABLE_AUTH=false
 
-CMD init.sh & node public/run.js -b 'ws://server:8080/' -i 'localhost:8188' -t 'comfyUI'
+ENTRYPOINT init.sh & node public/run.js
+CMD -b 'wss://apiv2.paipe.io/' -i 'localhost:8188' -t 'comfyUI'
