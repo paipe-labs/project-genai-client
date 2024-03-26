@@ -20,6 +20,12 @@ export type SessionManagerOptions = {
   backendServerWebSocketUrl: string;
   inferenceServerUrl?: string;
   inferenceServerType?: InferenceServerType;
+
+  // client node metadata
+  models?: string[];
+  gpuType?: string;
+  nCPU?: number;
+  ram?: number;
 };
 
 export function parseSessionManagerOptions(): SessionManagerOptions {
@@ -28,12 +34,17 @@ export function parseSessionManagerOptions(): SessionManagerOptions {
   program
     .addOption(new Option('-b, --backend <url>', 'backend server webSocket url').default('ws://server:8080/'))
     .addOption(new Option('-i, --inference <url>', 'inference server url'))
-    .addOption(new Option('-t, --type <type>', 'inference server type').choices(['automatic', 'voltaml', 'comfyUI', 'test']).default('test'));
+    .addOption(new Option('-t, --type <type>', 'inference server type').choices(['automatic', 'voltaml', 'comfyUI', 'test']).default('test'))
+
+    .addOption(new Option('--models <models...>', 'downloaded models'))
+    .addOption(new Option('--gpu <gpu_type>', 'graphics card type'))
+    .addOption(new Option('--ncpu <number>'))
+    .addOption(new Option('--ram <number>'));
 
   program.parse(process.argv);
 
   const options = program.opts();
-  return { backendServerWebSocketUrl: options.backend, inferenceServerUrl: options.inference, inferenceServerType: options.type };
+  return { backendServerWebSocketUrl: options.backend, inferenceServerUrl: options.inference, inferenceServerType: options.type, models: options.models, gpuType: options.gpu, nCPU: options.ncpu, ram: options.ram };
 }
 
 /**
@@ -47,13 +58,23 @@ export class SessionManager {
   private _ws?: WebSocket | WebSocketNode;
   private _nodeId: string;
   
+  // client node metadata
+  private _models?: string[];
+  private _GPUType?: string;
+  private _nCPU?: number;
+  private _RAM?: number;
+
   constructor(options: SessionManagerOptions) {
-    const { backendServerWebSocketUrl, inferenceServerUrl, inferenceServerType } = options;
+    const { backendServerWebSocketUrl, inferenceServerUrl, inferenceServerType, models, gpuType, nCPU, ram } = options;
 
     this._inferenceServerUrl = inferenceServerUrl;
     this._backendServerWebSocketUrl = backendServerWebSocketUrl;
 
     this._nodeId = uuidv4();
+    this._models = models;
+    this._GPUType = gpuType;
+    this._nCPU = nCPU;
+    this._RAM = ram;
 
     switch (inferenceServerType) {
       case 'automatic':
@@ -105,7 +126,17 @@ export class SessionManager {
     const { _ws: ws } = this;
 
     const onSocketOpen = () => {
-      ws.send(JSON.stringify({ type: 'register', node_id: this._nodeId }));
+
+      ws.send(JSON.stringify({
+                type: 'register',
+                node_id: this._nodeId,
+                metadata: {
+                    models: this._models,
+                    gpu_type: this._GPUType,
+                    ncpu: this._nCPU,
+                    ram: this._RAM,
+                }
+            }));
       console.log('Server WebSocket connection opened');
     };
 
