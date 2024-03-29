@@ -5,6 +5,8 @@
   "main": "./public/index.js",
   "type": "module",
   "scripts": {
+    "start": "node --loader ts-node/esm -r tsconfig-paths/register ./src/run.ts -b 'wss://apiv2.paipe.io'",
+    "start:local": "node --loader ts-node/esm -r tsconfig-paths/register ./src/run.ts -b 'ws://localhost:8080'",
     "build": "yarn rm:public && yarn generate:schemas && tsc && tsc-alias",
     "rm:public": "rm -rf ./public",
     "rm:schemas": "rm -rf src/schemas",
