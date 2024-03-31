@@ -45,12 +45,15 @@ export class SessionManager {
   private _tasksManager: TasksManager;
   private _inferenceServer: InferenceServer;
   private _ws?: WebSocket | WebSocketNode;
-
+  private _nodeId: string;
+  
   constructor(options: SessionManagerOptions) {
     const { backendServerWebSocketUrl, inferenceServerUrl, inferenceServerType } = options;
 
     this._inferenceServerUrl = inferenceServerUrl;
     this._backendServerWebSocketUrl = backendServerWebSocketUrl;
+
+    this._nodeId = uuidv4();
 
     switch (inferenceServerType) {
       case 'automatic':
@@ -102,7 +105,7 @@ export class SessionManager {
     const { _ws: ws } = this;
 
     const onSocketOpen = () => {
-      ws.send(JSON.stringify({ type: 'register', node_id: uuidv4() }));
+      ws.send(JSON.stringify({ type: 'register', node_id: this._nodeId }));
       console.log('Server WebSocket connection opened');
     };
 
