@@ -1788,6 +1788,11 @@ supports-color@^7.1.0:
   dependencies:
     has-flag "^4.0.0"
 
+systeminformation@^5.22.7:
+  version "5.22.7"
+  resolved "https://registry.yarnpkg.com/systeminformation/-/systeminformation-5.22.7.tgz#9a20810c7eacad4aebe7591cb7c78c0dd96dbd1a"
+  integrity sha512-AWxlP05KeHbpGdgvZkcudJpsmChc2Y5Eo/GvxG/iUA/Aws5LZKHAMSeAo+V+nD+nxWZaxrwpWcnx4SH3oxNL3A==
+
 text-table@^0.2.0:
   version "0.2.0"
   resolved "https://registry.npmjs.org/text-table/-/text-table-0.2.0.tgz"
