@@ -38,9 +38,9 @@ export function parseSessionManagerOptions(): SessionManagerOptions {
   const program = new Command();
 
   program
-    .addOption(new Option('-b, --backend <url>', 'backend server webSocket url').default('ws://server:8080/'))
+    .addOption(new Option('-b, --backend <url>', 'backend server webSocket url'))
     .addOption(new Option('-i, --inference <url>', 'inference server url'))
-    .addOption(new Option('-t, --type <type>', 'inference server type').choices(['automatic', 'voltaml', 'comfyUI', 'test']).default('test'))
+    .addOption(new Option('-t, --type <type>', 'inference server type').choices(['automatic', 'voltaml', 'comfyUI', 'test']))
 
     .addOption(new Option('--models <models...>', 'downloaded models').default([] as string[]));
 
