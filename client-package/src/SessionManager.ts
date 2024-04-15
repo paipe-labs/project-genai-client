@@ -1,4 +1,5 @@
 import axios from "axios";
+import * as si from 'systeminformation';
 import { waitForWebSocketConnection, uuidv4 } from "./helpers/index.js";
 
 import { WebSocket as WebSocketNode } from 'ws';
@@ -16,10 +17,21 @@ import { TestInferenceServer } from "./InferenceServer/TestInferenceServer.js";
 
 export type InferenceServerType = 'automatic' | 'voltaml' | 'comfyUI' | 'test';
 
+type NodeMetadata = {
+  models: string[],
+  gpuType: string,
+  // gpuMemory: number,
+  nCPU: number,
+  RAM: number
+}
+
 export type SessionManagerOptions = {
   backendServerWebSocketUrl: string;
   inferenceServerUrl?: string;
   inferenceServerType?: InferenceServerType;
+
+  // client node metadata
+  nodeMetadata?: NodeMetadata;
 };
 
 export function parseSessionManagerOptions(): SessionManagerOptions {
@@ -28,12 +40,20 @@ export function parseSessionManagerOptions(): SessionManagerOptions {
   program
     .addOption(new Option('-b, --backend <url>', 'backend server webSocket url').default('ws://server:8080/'))
     .addOption(new Option('-i, --inference <url>', 'inference server url'))
-    .addOption(new Option('-t, --type <type>', 'inference server type').choices(['automatic', 'voltaml', 'comfyUI', 'test']).default('test'));
+    .addOption(new Option('-t, --type <type>', 'inference server type').choices(['automatic', 'voltaml', 'comfyUI', 'test']).default('test'))
+
+    .addOption(new Option('--models <models...>', 'downloaded models').default([] as string[]));
 
   program.parse(process.argv);
-
   const options = program.opts();
-  return { backendServerWebSocketUrl: options.backend, inferenceServerUrl: options.inference, inferenceServerType: options.type };
+
+  var metadata = {} as NodeMetadata;
+  si.graphics().then(data => metadata.gpuType=data.controllers[0].model).catch(err => console.error(err));
+  si.cpu().then(data => metadata.nCPU=data.cores).catch(err => console.error(err));
+  si.mem().then(data => metadata.RAM=data.available).catch(err => console.error(err));
+  
+  metadata.models = options.models;
+  return { backendServerWebSocketUrl: options.backend, inferenceServerUrl: options.inference, inferenceServerType: options.type, nodeMetadata: metadata};
 }
 
 /**
@@ -47,13 +67,16 @@ export class SessionManager {
   private _ws?: WebSocket | WebSocketNode;
   private _nodeId: string;
   
+  // client node metadata
+  private _nodeMetadata?: NodeMetadata;
+
   constructor(options: SessionManagerOptions) {
-    const { backendServerWebSocketUrl, inferenceServerUrl, inferenceServerType } = options;
+    const { backendServerWebSocketUrl, inferenceServerUrl, inferenceServerType, nodeMetadata } = options;
 
     this._inferenceServerUrl = inferenceServerUrl;
     this._backendServerWebSocketUrl = backendServerWebSocketUrl;
-
     this._nodeId = uuidv4();
+    this._nodeMetadata = nodeMetadata;
 
     switch (inferenceServerType) {
       case 'automatic':
@@ -105,7 +128,17 @@ export class SessionManager {
     const { _ws: ws } = this;
 
     const onSocketOpen = () => {
-      ws.send(JSON.stringify({ type: 'register', node_id: this._nodeId }));
+
+      ws.send(JSON.stringify({
+                type: 'register',
+                node_id: this._nodeId,
+                metadata: {
+                    models: this._nodeMetadata?.models,
+                    gpu_type: this._nodeMetadata?.gpuType,
+                    ncpu: this._nodeMetadata?.nCPU,
+                    ram: this._nodeMetadata?.RAM,
+                }
+            }));
       console.log('Server WebSocket connection opened');
     };
 

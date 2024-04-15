@@ -32,6 +32,7 @@
     "queue": "^7.0.0",
     "reconnecting-websocket": "^4.4.0",
     "ts-node": "^10.9.2",
+    "systeminformation": "^5.22.7",
     "tsc-alias": "^1.8.8",
     "tsc-watch": "^6.0.4",
     "tsconfig-paths": "^4.2.0",
