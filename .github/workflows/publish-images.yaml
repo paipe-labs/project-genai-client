@@ -8,12 +8,12 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
-  AIDOCK_COMFYUI_DOCKERFILE: build/client-node-inference.dockerfile
+  AIDOCK_COMFYUI_DOCKERFILE: build/aidock-comfyui/client-node.dockerfile
   AIDOCK_TAG: -aidock-comfyui
   AIDOCK_COMFYUI_IMAGE: ghcr.io/ai-dock/comfyui
   AIDOCK_COMFYUI_TAG: latest
 
-  COG_COMFYUI_DOCKERFILE: build/client-node-inference.dockerfile
+  COG_COMFYUI_DOCKERFILE: build/cog-comfyui/client-node.dockerfile
   COG_TAG: -cog-comfyui
   COG_COMFYUI_IMAGE: ghcr.io/paipe-labs/cog-comfyui
   COG_COMFYUI_TAG: latest
@@ -61,8 +61,8 @@ jobs:
           context: .
           file: ${{ env.AIDOCK_COMFYUI_DOCKERFILE }}
           build-args: |
-            INFERENCE_IMAGE=${{ env.AIDOCK_COMFYUI_IMAGE }}
-            INFERENCE_TAG=${{ env.AIDOCK_COMFYUI_TAG }}
+            AIDOCK_COMFYUI_IMAGE=${{ env.AIDOCK_COMFYUI_IMAGE }}
+            AIDOCK_COMFYUI_TAG=${{ env.AIDOCK_COMFYUI_TAG }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -108,8 +108,8 @@ jobs:
           context: .
           file: ${{ env.COG_COMFYUI_DOCKERFILE }}
           build-args: |
-            INFERENCE_IMAGE=${{ env.COG_COMFYUI_IMAGE }}
-            INFERENCE_TAG=${{ env.COG_COMFYUI_TAG }}
+            COG_COMFYUI_IMAGE=${{ env.COG_COMFYUI_IMAGE }}
+            COG_COMFYUI_TAG=${{ env.COG_COMFYUI_TAG }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

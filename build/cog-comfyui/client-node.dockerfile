@@ -1,7 +1,7 @@
-ARG INFERENCE_IMAGE
-ARG INFERENCE_TAG
+ARG COG_COMFYUI_IMAGE
+ARG COG_COMFYUI_TAG
 
-FROM ${INFERENCE_IMAGE}:${INFERENCE_TAG}
+FROM ${COG_COMFYUI_IMAGE}:${COG_COMFYUI_TAG}
 
 
 ################################## install curl & jq ####################################
@@ -38,5 +38,8 @@ COPY client-package .
 RUN yarn build
 
 
-################################## configure inference ##################################
-COPY build .
+################################## run comfyUI & node ###################################
+COPY build/cog-comfyui /cog-comfyui
+
+ENTRYPOINT /cog-comfyui/run_comfyui.sh & node public/run.js
+CMD -b 'wss://apiv2.paipe.io/' -i 'localhost:8188' -t 'comfyUI'
