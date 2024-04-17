@@ -1,7 +1,7 @@
 FROM node:20-alpine3.18
 
 
-###################################### install jq ######################################
+###################################### install jq #######################################
 RUN apk update && apk add jq
 
 
@@ -21,7 +21,5 @@ COPY client-package .
 RUN yarn build
 
 
-################################## run comfyUI & node ###################################
-ENV WEB_ENABLE_AUTH=false
-
-ENTRYPOINT ["node", "public/run.js"]
+####################################### run node ########################################
+ENTRYPOINT node public/run.js

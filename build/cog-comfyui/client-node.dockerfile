@@ -1,12 +1,13 @@
-ARG COMFYUI_TAG=pytorch-2.2.0-py3.10-cuda-11.8.0-runtime-22.04
+ARG COG_COMFYUI_IMAGE
+ARG COG_COMFYUI_TAG
 
-FROM ghcr.io/ai-dock/comfyui:${COMFYUI_TAG}
+FROM ${COG_COMFYUI_IMAGE}:${COG_COMFYUI_TAG}
 
 
 ################################## install curl & jq ####################################
 RUN apt-get update \
-   && apt install -y curl \ 
-   && apt install jq
+    && apt install -y curl \ 
+    && apt install -y jq
 
 
 ############################### install node & npm & yarn ###############################
@@ -31,14 +32,14 @@ RUN yarn install
 # dirty hack to make node-sd-webui work with our imports,
 # remove when we replace library node-sd-webui
 RUN jq '. + { "type": "module" }' node_modules/node-sd-webui/package.json > temp.json \
-   && mv temp.json node_modules/node-sd-webui/package.json
+    && mv temp.json node_modules/node-sd-webui/package.json
 
 COPY client-package .
 RUN yarn build
 
 
 ################################## run comfyUI & node ###################################
-ENV WEB_ENABLE_AUTH=false
+COPY build/cog-comfyui /cog-comfyui
 
-ENTRYPOINT init.sh & node public/run.js
+ENTRYPOINT /cog-comfyui/run_comfyui.sh & node public/run.js
 CMD -b 'wss://apiv2.paipe.io/' -i 'localhost:8188' -t 'comfyUI'
