@@ -41,5 +41,5 @@ RUN yarn build
 ################################## run comfyUI & node ###################################
 COPY build/aidock-comfyui /aidock-comfyui
 
-ENTRYPOINT /aidock-comfyui/run_comfyui.sh & node public/run.js
-CMD -b 'wss://apiv2.paipe.io/' -i 'localhost:8188' -t 'comfyUI'
+ENTRYPOINT /aidock-comfyui/run_comfyui.sh & node public/run.js \ 
+    -b 'wss://apiv2.paipe.io/' -i 'localhost:8188' -t 'comfyUI'
