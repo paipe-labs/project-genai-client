@@ -14,7 +14,9 @@ Node components:
     - `VoltaMLInferenceServer`
     - `TestInferenceServer`
 
-![node](doc/node.png)
+<p align="center">
+  <img src="doc/node.png"/>
+</p>
 
 # Inference
 Inference is a node part responsible for the image generation process. [Сog-comfyui](https://github.com/fofr/cog-comfyui) and [ai-dock comfyui](https://github.com/ai-dock/comfyui/) are integrated into node component as base Docker images - configuration can be found in `build` directory.
